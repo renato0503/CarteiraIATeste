@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Carteira Inteligente IA – Protótipo</title>
+  <!-- Fonte e reset simples -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f1a;
+      --panel: #121827;
+      --muted: #64748b;
+      --text: #e5e7eb;
+      --accent: #22d3ee;
+      --ok: #10b981;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+      --line: #1f2937;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; background: radial-gradient(1200px 600px at 80% -200px, rgba(34,211,238,.12), transparent 60%) , var(--bg);
+      color: var(--text); font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
+    .shell { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    header { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center; margin-bottom: 16px; }
+    .brand { font-weight: 700; font-size: 18px; letter-spacing: .4px; }
+    .badge { padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 12px; }
+    .grid { display: grid; grid-template-columns: 360px 1fr; gap: 16px; align-items: start; }
+    .panel { background: linear-gradient(180deg, #0f172a 0%, var(--panel) 100%); border: 1px solid var(--line); border-radius: 16px; }
+    .panel h3 { margin: 0 0 8px 0; font-size: 14px; color: #cbd5e1; font-weight: 600; }
+    .panel .head { padding: 16px 16px 0 16px; }
+    .panel .body { padding: 16px; border-top: 1px solid var(--line); }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    input, select, textarea { width: 100%; padding: 10px 12px; background: #0b1220; border: 1px solid #202a40; color: var(--text); border-radius: 10px; outline: none; }
+    textarea { min-height: 80px; resize: vertical; }
+    button { padding: 10px 14px; border-radius: 10px; background: #1f2937; color: var(--text); border: 1px solid #2b364f; cursor: pointer; }
+    button.primary { background: linear-gradient(180deg, #0891b2, #0ea5b7); border: none; }
+    button.ghost { background: transparent; border: 1px dashed #334155; }
+    button:disabled { opacity: .6; cursor: not-allowed; }
+    .hint { font-size: 12px; color: var(--muted); }
+    .divider { height: 1px; background: var(--line); margin: 12px 0 16px 0; }
+
+    /* Chat */
+    .chat { display: grid; gap: 10px; }
+    .msg { display: grid; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: #0b1220; }
+    .msg.user { border-color: #1e293b; }
+    .msg.assistant { background: #0e1627; border-color: #233047; }
+    .msg small { color: var(--muted); }
+
+    /* Tabela */
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid var(--line); font-size: 13px; }
+    th { color: #cbd5e1; font-weight: 600; position: sticky; top: 0; background: linear-gradient(180deg, #0f172a 0%, var(--panel) 100%); z-index: 1; }
+    tbody tr:hover { background: rgba(34,211,238,.04); }
+
+    /* Badges e tags */
+    .tag { padding: 4px 8px; border: 1px solid #26324a; border-radius: 999px; font-size: 11px; color: #cbd5e1; }
+    .tag.ok { border-color: rgba(16,185,129,.35); color: #34d399; }
+    .tag.warn { border-color: rgba(245,158,11,.35); color: #fbbf24; }
+    .tag.bad { border-color: rgba(239,68,68,.35); color: #f87171; }
+
+    /* Cards */
+    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .card { border: 1px solid var(--line); border-radius: 14px; padding: 14px; background: #0b1220; }
+    .card h4 { margin: 0 0 8px 0; font-size: 13px; color: #cbd5e1; }
+    .kpi { font-size: 22px; font-weight: 700; }
+
+    /* Rodapé */
+    footer { opacity: .8; color: var(--muted); font-size: 12px; text-align: center; margin-top: 16px; }
+
+    /* Layout responsivo */
+    @media (max-width: 1020px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="brand">Carteira Inteligente IA · Protótipo HTML único</div>
+      <div class="badge">Demonstração acadêmica · Dados simulados</div>
+    </header>
+
+    <div class="grid">
+      <!-- Coluna esquerda: coleta e chat -->
+      <aside class="panel">
+        <div class="head">
+          <h3>Coleta de dados</h3>
+        </div>
+        <div class="body">
+          <!-- Formulário de ativos -->
+          <div class="row">
+            <div>
+              <label>Ticker</label>
+              <input id="inTicker" placeholder="ex: PETR4" />
+            </div>
+            <div>
+              <label>Quantidade</label>
+              <input id="inQty" type="number" min="1" step="1" placeholder="100" />
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Preço Médio</label>
+              <input id="inPM" type="number" min="0" step="0.01" placeholder="28.50" />
+            </div>
+            <div>
+              <label>Preço Atual</label>
+              <input id="inPX" type="number" min="0" step="0.01" placeholder="30.10" />
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>DY anual %</label>
+              <input id="inDY" type="number" min="0" step="0.01" placeholder="8.5" />
+            </div>
+            <div>
+              <label>Payout %</label>
+              <input id="inPayout" type="number" min="0" max="200" step="0.1" placeholder="65" />
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>ROE %</label>
+              <input id="inROE" type="number" min="-200" max="200" step="0.1" placeholder="18" />
+            </div>
+            <div>
+              <label>Endividamento Líquido / EBITDA</label>
+              <input id="inDebt" type="number" min="-10" max="20" step="0.1" placeholder="1.2" />
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>FCO por ação</label>
+              <input id="inFCO" type="number" min="-100" step="0.01" placeholder="2.30" />
+            </div>
+            <div>
+              <label>Setor</label>
+              <select id="inSector">
+                <option>Energia</option>
+                <option>Financeiro</option>
+                <option>Varejo</option>
+                <option>Indústria</option>
+                <option>Telecom</option>
+                <option>Outros</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:10px;">
+            <button class="primary" id="btnAdd">Adicionar ativo</button>
+            <button class="ghost" id="btnMock">Carregar exemplo</button>
+            <button id="btnCSV">Importar CSV</button>
+            <input id="fileCSV" type="file" accept=".csv" style="display:none" />
+          </div>
+          <div class="divider"></div>
+
+          <!-- Chat simplificado apoiado por regras -->
+          <h3>Assistente</h3>
+          <div class="chat" id="chat"></div>
+          <div style="display:flex; gap:8px; margin-top:8px;">
+            <input id="inPrompt" placeholder="pergunte sobre dividendos, risco ou concentração" />
+            <button id="btnAsk">Perguntar</button>
+          </div>
+          <p class="hint">A resposta usa regras locais, sem chamada externa. O objetivo é demonstrar fluxo.</p>
+        </div>
+      </aside>
+
+      <!-- Coluna direita: carteira, métricas, gráficos, relatório -->
+      <main class="panel">
+        <div class="head">
+          <h3>Painel</h3>
+        </div>
+        <div class="body">
+          <div class="cards">
+            <div class="card"><h4>Valor de mercado</h4><div class="kpi" id="kVal">R$ 0,00</div><div class="hint" id="kValHint"></div></div>
+            <div class="card"><h4>Renda anual estimada</h4><div class="kpi" id="kDiv">R$ 0,00</div><div class="hint">Base em DY informado</div></div>
+            <div class="card"><h4>Concentração</h4><div class="kpi" id="kTop">0%</div><div class="hint" id="kTopHint"></div></div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:6px;">
+            <h3 style="margin:0">Posições</h3>
+            <div style="display:flex; gap:8px;">
+              <button id="btnExport">Exportar JSON</button>
+              <button id="btnPrint">Gerar PDF</button>
+              <button id="btnClear">Limpar</button>
+            </div>
+          </div>
+
+          <div style="max-height: 300px; overflow: auto; border:1px solid var(--line); border-radius:12px;">
+            <table id="tab">
+              <thead>
+                <tr>
+                  <th>Ticker</th>
+                  <th>Setor</th>
+                  <th>Qtde</th>
+                  <th>P. Médio</th>
+                  <th>Preço</th>
+                  <th>Valor</th>
+                  <th>DY %</th>
+                  <th>Payout %</th>
+                  <th>ROE %</th>
+                  <th>FCO/ação</th>
+                  <th>DL/EBITDA</th>
+                  <th>Score</th>
+                  <th>Ação</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="row">
+            <div class="panel" style="border-radius:12px;">
+              <div class="head"><h3>Composição por setor</h3></div>
+              <div class="body"><canvas id="chPie" height="220"></canvas></div>
+            </div>
+            <div class="panel" style="border-radius:12px;">
+              <div class="head"><h3>Renda anual por ativo</h3></div>
+              <div class="body"><canvas id="chBar" height="220"></canvas></div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="panel" style="border-radius:12px;">
+            <div class="head"><h3>Alertas e sugestões automáticas</h3></div>
+            <div class="body" id="alerts"></div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <footer>
+      Protótipo educacional sem recomendação de investimento. Use dados públicos auditáveis para validação. 2025.
+    </footer>
+  </div>
+
+  <!-- Lib de gráficos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <script>
+    // ==========================
+    // Estado e utilidades
+    // ==========================
+    const state = {
+      items: [] // cada item: {ticker, sector, qty, pm, px, dy, payout, roe, fco, debt}
+    };
+
+    const fmtBRL = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const fmtPCT = v => `${(v||0).toFixed(1)}%`;
+
+    function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
+
+    // Score simples de qualidade de dividendo
+    // critérios: DY moderado 5..12, payout 40..80, ROE > 12, FCO/ação > 0, DL/EBITDA < 2.5
+    function scoreQuality(x){
+      let s = 0;
+      if (x.dy >= 5 && x.dy <= 12) s += 25; else if (x.dy > 0) s += 10;
+      if (x.payout >= 40 && x.payout <= 80) s += 25; else if (x.payout > 0 && x.payout < 120) s += 10;
+      if (x.roe >= 12) s += 20; else if (x.roe >= 0) s += 8;
+      if (x.fco > 0) s += 20; else if (x.fco === 0) s += 5;
+      if (x.debt >= 0 && x.debt <= 2.5) s += 10; else if (x.debt < 0) s += 15; // caixa líquido recebe bônus
+      return clamp(Math.round(s), 0, 100);
+    }
+
+    // Regras de alerta e anomalia
+    function buildAlerts(){
+      const el = document.getElementById('alerts');
+      el.innerHTML = '';
+      if (state.items.length === 0){ el.innerHTML = '<p class="hint">Sem dados para análise.</p>'; return; }
+
+      // Concentração por ativo
+      const total = state.items.reduce((a,b)=> a + b.qty*b.px, 0);
+      const parts = state.items.map(i=> ({ t: i.ticker, w: (i.qty*i.px)/total }));
+      const top = parts.sort((a,b)=> b.w-a.w)[0];
+      const msgTop = top.w > 0.25 ? `o ativo ${top.t} ocupa ${(top.w*100).toFixed(1)} do valor total, ajuste a alocação para reduzir risco específico` : `distribuição por ativo sem concentração acima de 25`;
+      addAlert(msgTop, top.w > 0.25 ? 'warn' : 'ok');
+
+      // Payout fora de faixa
+      state.items.forEach(i=>{
+        if (i.payout > 110) addAlert(`${i.ticker} apresenta payout acima de 110, verifique sustentabilidade dos pagamentos`, 'warn');
+        if (i.payout < 10) addAlert(`${i.ticker} distribui pouco resultado, avalie se a tese depende de crescimento`, 'warn');
+      });
+
+      // FCO negativo
+      state.items.filter(i=> i.fco < 0).forEach(i=> addAlert(`${i.ticker} possui fluxo de caixa operacional negativo por ação, confira ciclo e sazonalidade`, 'bad'));
+
+      // Dívida elevada
+      state.items.filter(i=> i.debt > 3).forEach(i=> addAlert(`${i.ticker} tem alavancagem acima de 3x EBITDA, monitore covenants e custo da dívida`, 'bad'));
+
+      // DY extremo
+      state.items.filter(i=> i.dy > 15).forEach(i=> addAlert(`${i.ticker} com DY acima de 15, investigue eventos não recorrentes`, 'warn'));
+
+      // Sugestões simples
+      const lowDy = state.items.filter(i=> i.dy < 4).map(i=> i.ticker).join(', ');
+      if (lowDy) addAlert(`alocação com DY baixo em ${lowDy}, teste simulação com ativos de maior distribuição para atingir meta de renda`, 'ok');
+    }
+
+    function addAlert(text, type){
+      const tag = type === 'ok' ? 'tag ok' : type === 'bad' ? 'tag bad' : 'tag warn';
+      const row = document.createElement('div');
+      row.style.display = 'flex'; row.style.alignItems = 'center'; row.style.gap = '10px'; row.style.marginBottom = '8px';
+      row.innerHTML = `<span class="${tag}">${type}</span><span>${text}%</span>`;
+      // remover o símbolo % acidental quando a frase já traz número
+      row.innerHTML = row.innerHTML.replace('%,', ',').replace('%</span>','</span>');
+      document.getElementById('alerts').appendChild(row);
+    }
+
+    // Atualização do painel
+    function refresh(){
+      const tbody = document.querySelector('#tab tbody');
+      tbody.innerHTML = '';
+      state.items.forEach((x, idx)=>{
+        const val = x.qty * x.px;
+        const inc = (x.px - x.pm) * x.qty;
+        const sc = scoreQuality(x);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${x.ticker}</td>
+          <td>${x.sector}</td>
+          <td>${x.qty}</td>
+          <td>${fmtBRL(x.pm)}</td>
+          <td>${fmtBRL(x.px)}</td>
+          <td>${fmtBRL(val)}</td>
+          <td>${x.dy.toFixed(1)}</td>
+          <td>${x.payout.toFixed(1)}</td>
+          <td>${x.roe.toFixed(1)}</td>
+          <td>${x.fco.toFixed(2)}</td>
+          <td>${x.debt.toFixed(1)}</td>
+          <td><span class="tag ${sc>=70?'ok': sc>=50?'warn':'bad'}">${sc}</span></td>
+          <td><button data-i="${idx}" class="del">Remover</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // KPIs
+      const tot = state.items.reduce((a,b)=> a + b.qty*b.px, 0);
+      const renda = state.items.reduce((a,b)=> a + (b.qty*b.px) * (b.dy/100), 0);
+      document.getElementById('kVal').textContent = fmtBRL(tot);
+      document.getElementById('kDiv').textContent = fmtBRL(renda);
+      document.getElementById('kValHint').textContent = state.items.length ? `${state.items.length} ativos` : '';
+
+      const weights = state.items.map(i=> i.qty*i.px);
+      const top = weights.length ? Math.max(...weights) : 0;
+      const topPct = tot ? (top/tot*100) : 0;
+      document.getElementById('kTop').textContent = `${topPct.toFixed(1)}%`;
+      document.getElementById('kTopHint').textContent = topPct>25 ? 'acima de 25' : 'abaixo de 25';
+
+      buildAlerts();
+      drawCharts();
+      bindRowEvents();
+    }
+
+    function bindRowEvents(){
+      document.querySelectorAll('button.del').forEach(b=>{
+        b.onclick = () => { const i = +b.dataset.i; state.items.splice(i,1); refresh(); };
+      });
+    }
+
+    // Gráficos
+    let chPie, chBar;
+    function drawCharts(){
+      const ctxPie = document.getElementById('chPie');
+      const ctxBar = document.getElementById('chBar');
+      const bySector = {};
+      state.items.forEach(i=>{ bySector[i.sector] = (bySector[i.sector]||0) + i.qty*i.px; });
+      const sectors = Object.keys(bySector);
+      const sectorVals = Object.values(bySector);
+
+      const labels = state.items.map(i=> i.ticker);
+      const renda = state.items.map(i=> (i.qty*i.px)*(i.dy/100));
+
+      if (chPie) chPie.destroy();
+      if (chBar) chBar.destroy();
+
+      chPie = new Chart(ctxPie, { type: 'pie', data: { labels: sectors, datasets: [{ data: sectorVals }] }, options: { plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' } } } } });
+      chBar = new Chart(ctxBar, { type: 'bar', data: { labels, datasets: [{ data: renda }] }, options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#cbd5e1' } }, y: { ticks: { color: '#cbd5e1' } } } } });
+    }
+
+    // Importação CSV simples: colunas esperadas
+    // ticker,sector,qty,pm,px,dy,payout,roe,fco,debt
+    function parseCSV(text){
+      const rows = text.split(/\r?\n/).filter(r=>r.trim());
+      rows.forEach((r,idx)=>{
+        const [ticker, sector, qty, pm, px, dy, payout, roe, fco, debt] = r.split(',');
+        if (idx===0 && ticker.toLowerCase().includes('ticker')) return; // ignora cabeçalho
+        if (!ticker) return;
+        state.items.push({
+          ticker: ticker.trim().toUpperCase(),
+          sector: (sector||'Outros').trim(),
+          qty: +qty||0,
+          pm: +pm||0,
+          px: +px||0,
+          dy: +dy||0,
+          payout: +payout||0,
+          roe: +roe||0,
+          fco: +fco||0,
+          debt: +debt||0,
+        });
+      });
+      refresh();
+    }
+
+    // Chat baseado em regras
+    function assistantReply(q){
+      const t = q.toLowerCase();
+      if (!state.items.length) return 'inclua ativos para análise';
+      const tot = state.items.reduce((a,b)=> a + b.qty*b.px, 0);
+      if (t.includes('dy') || t.includes('divid')){
+        const renda = state.items.map(i=> ({ t: i.ticker, r: (i.qty*i.px)*(i.dy/100) }));
+        const top = renda.sort((a,b)=> b.r-a.r)[0];
+        return `renda anual estimada em ${fmtBRL(state.items.reduce((a,b)=> a + (b.qty*b.px)*(b.dy/100), 0))}, maior contribuição em ${top.t}`;
+      }
+      if (t.includes('payout')){
+        const high = state.items.filter(i=> i.payout>100).map(i=>i.ticker).join(', ');
+        return high ? `payout elevado em ${high}, verificação de recorrência recomendada` : 'payout dentro de faixas usuais';
+      }
+      if (t.includes('concent')){
+        const ws = state.items.map(i=> i.qty*i.px);
+        const topW = Math.max(...ws); const pct = tot? topW/tot*100 : 0;
+        return `maior peso individual em ${pct.toFixed(1)} do valor total`;
+      }
+      if (t.includes('risco') || t.includes('dívid') || t.includes('alavanc')){
+        const high = state.items.filter(i=> i.debt>3).map(i=>i.ticker).join(', ');
+        return high ? `${high} acima de 3x EBITDA, acompanhe juros e covenants` : 'alavancagem contida na amostra';
+      }
+      if (t.includes('qualidade') || t.includes('score')){
+        const best = state.items.map(i=> ({t:i.ticker, s:scoreQuality(i)})).sort((a,b)=>b.s-a.s)[0];
+        return `melhor score em ${best.t} com ${best.s}`;
+      }
+      return 'pergunta não reconhecida, tente com dividendos, payout, concentração, risco ou score';
+    }
+
+    function pushChat(role, text){
+      const box = document.getElementById('chat');
+      const div = document.createElement('div');
+      div.className = `msg ${role}`;
+      const who = role === 'user' ? 'você' : 'assistente';
+      div.innerHTML = `<small>${who}</small><div>${text}</div>`;
+      box.appendChild(div); box.scrollTop = box.scrollHeight;
+    }
+
+    // Eventos de UI
+    document.getElementById('btnAdd').onclick = () => {
+      const item = {
+        ticker: inTicker.value.trim().toUpperCase(),
+        sector: inSector.value,
+        qty: +inQty.value || 0,
+        pm: +inPM.value || 0,
+        px: +inPX.value || 0,
+        dy: +inDY.value || 0,
+        payout: +inPayout.value || 0,
+        roe: +inROE.value || 0,
+        fco: +inFCO.value || 0,
+        debt: +inDebt.value || 0,
+      };
+      if (!item.ticker || !item.qty){ alert('preencha ticker e quantidade'); return; }
+      state.items.push(item); refresh();
+      inTicker.value = inQty.value = inPM.value = inPX.value = inDY.value = inPayout.value = inROE.value = inFCO.value = inDebt.value = '';
+    };
+
+    document.getElementById('btnMock').onclick = () => {
+      state.items = [
+        {ticker:'PETR4', sector:'Energia', qty:300, pm:28.5, px:30.1, dy:12.2, payout:65, roe:18.4, fco:2.3, debt:1.1},
+        {ticker:'BBAS3', sector:'Financeiro', qty:200, pm:42.7, px:48.0, dy:8.5, payout:45, roe:20.2, fco:3.1, debt:0.0},
+        {ticker:'WEGE3', sector:'Indústria', qty:150, pm:34.0, px:39.5, dy:5.2, payout:55, roe:22.0, fco:1.7, debt:0.8},
+        {ticker:'TAEE11', sector:'Energia', qty:120, pm:37.2, px:35.9, dy:15.6, payout:98, roe:14.0, fco:1.2, debt:2.8},
+        {ticker:'VIVT3', sector:'Telecom', qty:180, pm:40.0, px:41.2, dy:7.0, payout:60, roe:12.8, fco:1.5, debt:1.9},
+      ];
+      refresh();
+      pushChat('assistant','exemplo carregado, prossiga com perguntas');
+    };
+
+    document.getElementById('btnCSV').onclick = ()=> fileCSV.click();
+    document.getElementById('fileCSV').onchange = (e)=>{
+      const f = e.target.files[0]; if (!f) return; const r = new FileReader();
+      r.onload = () => parseCSV(r.result); r.readAsText(f);
+    };
+
+    document.getElementById('btnAsk').onclick = () => {
+      const q = inPrompt.value.trim(); if (!q) return;
+      pushChat('user', q);
+      const a = assistantReply(q);
+      setTimeout(()=>{ pushChat('assistant', a); }, 200);
+      inPrompt.value='';
+    };
+
+    document.getElementById('btnExport').onclick = () => {
+      const data = JSON.stringify({ generatedAt: new Date().toISOString(), items: state.items }, null, 2);
+      const blob = new Blob([data], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'carteira_inteligente.json'; a.click();
+      setTimeout(()=> URL.revokeObjectURL(url), 1000);
+    };
+
+    document.getElementById('btnPrint').onclick = () => {
+      window.print();
+    };
+
+    document.getElementById('btnClear').onclick = () => {
+      if (!confirm('limpar dados da sessão')) return;
+      state.items = []; refresh();
+      document.getElementById('chat').innerHTML = '';
+    };
+
+    // Inicialização
+    refresh();
+  </script>
+</body>
+</html>
